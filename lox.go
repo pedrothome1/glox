@@ -7,6 +7,19 @@ import (
 )
 
 func main() {
+	/* AST Printer */
+	//expression := &Binary{
+	//	Left: &Unary{
+	//		Operator: Token{Minus, "-", nil, 1},
+	//		Right:    &Literal{123},
+	//	},
+	//	Operator: Token{Star, "*", nil, 1},
+	//	Right:    &Grouping{&Literal{45.67}},
+	//}
+	//
+	//fmt.Println(astPrinter{}.Print(expression))
+
+	/* Original code */
 	if len(os.Args) > 2 {
 		fmt.Println("Usage: glox [script]")
 		os.Exit(64)
