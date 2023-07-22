@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"io"
 	"os"
 )
 
@@ -42,21 +42,20 @@ func runFile(fileName string) error {
 }
 
 func runPrompt() {
-	var line string
+	stdin := bufio.NewScanner(os.Stdin)
 
 	for {
 		fmt.Print("> ")
 
-		_, err := fmt.Scanln(&line)
-		if err == io.EOF || line == "" {
+		if !stdin.Scan() {
 			break
 		}
 
-		panicIfError(err)
+		panicIfError(stdin.Err())
 
-		err = run(line)
+		err := run(stdin.Text())
 		if err != nil {
-			// TODO: Report error and move on
+			fmt.Printf("%v", err)
 		}
 	}
 }
@@ -70,7 +69,7 @@ func run(source string) error {
 	}
 
 	for _, token := range tokens {
-		fmt.Println(token)
+		fmt.Println(token.String())
 	}
 
 	return nil
