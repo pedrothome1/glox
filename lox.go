@@ -68,9 +68,14 @@ func run(source string) error {
 		return err
 	}
 
-	for _, token := range tokens {
-		fmt.Println(token.String())
+	parser := NewParser(tokens)
+
+	expression, err := parser.Parse()
+	if err != nil {
+		return err
 	}
+
+	astPrinter{}.Print(expression)
 
 	return nil
 }

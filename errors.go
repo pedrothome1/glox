@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-func ReportError(line int, message string) {
-	fmt.Printf("[line %d] Error: %s", line, message)
+func ReportError(line int, message string, where ...string) {
+	fmt.Printf("[line %d] Error%s: %s", line, strings.Join(where, ", "), message)
 }
