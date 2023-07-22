@@ -44,17 +44,15 @@ type scanner struct {
 }
 
 func (x *scanner) ScanTokens() ([]Token, error) {
-	var tokens []Token
-
 	for !x.isAtEnd() {
 		// We are at the beginning of the next lexeme.
 		x.start = x.current
 		x.scanToken()
 	}
 
-	tokens = append(tokens, NewToken(EOF, "", nil, x.line))
+	x.tokens = append(x.tokens, Token{EOF, "", nil, x.line})
 
-	return tokens, nil
+	return x.tokens, nil
 }
 
 func (x *scanner) scanToken() {
@@ -141,7 +139,7 @@ func (x *scanner) advance() uint8 {
 
 func (x *scanner) addToken(tokenType TokenType, literal any) {
 	text := x.source[x.start:x.current]
-	x.tokens = append(x.tokens, NewToken(tokenType, text, literal, x.line))
+	x.tokens = append(x.tokens, Token{tokenType, text, literal, x.line})
 }
 
 func (x *scanner) match(expected uint8) bool {
