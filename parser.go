@@ -240,6 +240,4 @@ func reportParserError(token Token, message string) {
 	}
 }
 
-var (
-	errParse = errors.New("parse error")
-)
+var errParse = errors.New("parse error")

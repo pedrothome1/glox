@@ -2,33 +2,15 @@ package main
 
 // Visitor
 type Visitor interface {
-	VisitBinaryExpr(expr Binary) any
-	VisitGroupingExpr(expr Grouping) any
-	VisitLiteralExpr(expr Literal) any
-	VisitUnaryExpr(expr Unary) any
-}
-
-type visitorImpl struct{}
-
-func (x visitorImpl) VisitBinaryExpr(expr Binary) any {
-	panic("implement me")
-}
-
-func (x visitorImpl) VisitGroupingExpr(expr Grouping) any {
-	panic("implement me")
-}
-
-func (x visitorImpl) VisitLiteralExpr(expr Literal) any {
-	panic("implement me")
-}
-
-func (x visitorImpl) VisitUnaryExpr(expr Unary) any {
-	panic("implement me")
+	VisitBinaryExpr(expr Binary) (any, error)
+	VisitGroupingExpr(expr Grouping) (any, error)
+	VisitLiteralExpr(expr Literal) (any, error)
+	VisitUnaryExpr(expr Unary) (any, error)
 }
 
 // Expressions
 type Expr interface {
-	Accept(visitor Visitor) any
+	Accept(visitor Visitor) (any, error)
 }
 
 type Binary struct {
@@ -37,7 +19,7 @@ type Binary struct {
 	Right    Expr
 }
 
-func (x Binary) Accept(visitor Visitor) any {
+func (x Binary) Accept(visitor Visitor) (any, error) {
 	return visitor.VisitBinaryExpr(x)
 }
 
@@ -45,16 +27,16 @@ type Grouping struct {
 	Expression Expr
 }
 
-func (x Grouping) Accept(visitor Visitor) any {
-	return visitor.VisitGroupingExpr(x)
+func (x Grouping) Accept(visitor Visitor) (any, error) {
+	return visitor.VisitGroupingExpr(x), nil
 }
 
 type Literal struct {
 	Value any
 }
 
-func (x Literal) Accept(visitor Visitor) any {
-	return visitor.VisitLiteralExpr(x)
+func (x Literal) Accept(visitor Visitor) (any, error) {
+	return visitor.VisitLiteralExpr(x), nil
 }
 
 type Unary struct {
@@ -62,6 +44,6 @@ type Unary struct {
 	Right    Expr
 }
 
-func (x Unary) Accept(visitor Visitor) any {
-	return visitor.VisitUnaryExpr(x)
+func (x Unary) Accept(visitor Visitor) (any, error) {
+	return visitor.VisitUnaryExpr(x), nil
 }

@@ -8,27 +8,31 @@ import (
 type astPrinter struct{}
 
 func (x astPrinter) Print(expr Expr) any {
-	return expr.Accept(&x)
+	result, _ := expr.Accept(&x)
+
+	fmt.Println(result.(string))
+
+	return result
 }
 
-func (x astPrinter) VisitBinaryExpr(expr Binary) any {
-	return x.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
+func (x astPrinter) VisitBinaryExpr(expr Binary) (any, error) {
+	return x.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right), nil
 }
 
-func (x astPrinter) VisitGroupingExpr(expr Grouping) any {
-	return x.parenthesize("group", expr.Expression)
+func (x astPrinter) VisitGroupingExpr(expr Grouping) (any, error) {
+	return x.parenthesize("group", expr.Expression), nil
 }
 
-func (x astPrinter) VisitLiteralExpr(expr Literal) any {
+func (x astPrinter) VisitLiteralExpr(expr Literal) (any, error) {
 	if expr.Value == nil {
-		return "nil"
+		return "nil", nil
 	}
 
-	return fmt.Sprintf("%v", expr.Value)
+	return fmt.Sprintf("%v", expr.Value), nil
 }
 
-func (x astPrinter) VisitUnaryExpr(expr Unary) any {
-	return x.parenthesize(expr.Operator.Lexeme, expr.Right)
+func (x astPrinter) VisitUnaryExpr(expr Unary) (any, error) {
+	return x.parenthesize(expr.Operator.Lexeme, expr.Right), nil
 }
 
 func (x astPrinter) parenthesize(name string, exprs ...Expr) string {
@@ -38,13 +42,13 @@ func (x astPrinter) parenthesize(name string, exprs ...Expr) string {
 	builder.WriteString(name)
 
 	for _, expr := range exprs {
+		value, _ := expr.Accept(x)
+
 		builder.WriteString(" ")
-		builder.WriteString(expr.Accept(x).(string))
+		builder.WriteString(value.(string))
 	}
 
 	builder.WriteString(")")
-
-	fmt.Println(builder.String())
 
 	return builder.String()
 }
