@@ -28,7 +28,7 @@ type Grouping struct {
 }
 
 func (x Grouping) Accept(visitor Visitor) (any, error) {
-	return visitor.VisitGroupingExpr(x), nil
+	return visitor.VisitGroupingExpr(x)
 }
 
 type Literal struct {
@@ -36,7 +36,7 @@ type Literal struct {
 }
 
 func (x Literal) Accept(visitor Visitor) (any, error) {
-	return visitor.VisitLiteralExpr(x), nil
+	return visitor.VisitLiteralExpr(x)
 }
 
 type Unary struct {
@@ -45,5 +45,5 @@ type Unary struct {
 }
 
 func (x Unary) Accept(visitor Visitor) (any, error) {
-	return visitor.VisitUnaryExpr(x), nil
+	return visitor.VisitUnaryExpr(x)
 }

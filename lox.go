@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+var interpreter = &Interpreter{}
+
 func main() {
 	/* AST Printer */
 	//expression := &Binary{
@@ -75,7 +77,10 @@ func run(source string) error {
 		return err
 	}
 
-	astPrinter{}.Print(expression)
+	err = interpreter.Interpret(expression)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

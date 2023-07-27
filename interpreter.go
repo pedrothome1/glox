@@ -1,6 +1,29 @@
 package main
 
+import (
+	"fmt"
+	"strconv"
+)
+
 type Interpreter struct{}
+
+func (x *Interpreter) Interpret(expression Expr) error {
+	value, err := x.evaluate(expression)
+
+	if runtimeErr, ok := err.(RuntimeError); ok {
+		runtimeError(runtimeErr)
+
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(x.stringify(value))
+
+	return nil
+}
 
 func (x *Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
 	left, err := x.evaluate(expr.Left)
@@ -80,7 +103,7 @@ func (x *Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
 }
 
 func (x *Interpreter) VisitGroupingExpr(expr Grouping) (any, error) {
-	return x.evaluate(expr.Expression), nil
+	return x.evaluate(expr.Expression)
 }
 
 func (x *Interpreter) VisitLiteralExpr(expr Literal) (any, error) {
@@ -109,6 +132,22 @@ func (x *Interpreter) VisitUnaryExpr(expr Unary) (any, error) {
 
 func (x *Interpreter) evaluate(expr Expr) (any, error) {
 	return expr.Accept(x)
+}
+
+func (x *Interpreter) stringify(value any) string {
+	if value == nil {
+		return "nil"
+	}
+
+	if v, ok := value.(float64); ok {
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	}
+
+	if v, ok := value.(fmt.Stringer); ok {
+		return v.String()
+	}
+
+	return fmt.Sprintf("%v", value)
 }
 
 func (x *Interpreter) isEqual(a any, b any) bool {
@@ -146,6 +185,10 @@ func (x *Interpreter) checkNumberOperands(operator Token, left any, right any) e
 }
 
 // Errors
+func runtimeError(err RuntimeError) {
+	fmt.Printf("%s\n[line %d]\n", err.Message, err.Token.Line)
+}
+
 type RuntimeError struct {
 	Message string
 	Token   Token
