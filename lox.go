@@ -72,15 +72,15 @@ func run(source string) error {
 
 	parser := NewParser(tokens)
 
-	expression, err := parser.Parse()
+	_, err = parser.Parse()
 	if err != nil {
 		return err
 	}
 
-	err = interpreter.Interpret(expression)
-	if err != nil {
-		return err
-	}
+	//err = interpreter.Interpret(expression)
+	//if err != nil {
+	//	return err
+	//}
 
 	return nil
 }

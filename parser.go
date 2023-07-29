@@ -16,14 +16,64 @@ type Parser struct {
 	current int
 }
 
-func (x *Parser) Parse() (Expr, error) {
-	expr, err := x.expression()
-	if errors.Is(err, errParse) {
-		// TODO: Handle error
+func (x *Parser) Parse() ([]Stmt, error) {
+	var statements []Stmt
+
+	for !x.isAtEnd() {
+		stmt, err := x.statement()
+		if err != nil {
+			return nil, err
+		}
+
+		statements = append(statements, stmt)
+	}
+
+	return statements, nil
+
+
+	//expr, err := x.expression()
+	//if errors.Is(err, errParse) {
+	//	// TODO: Handle error
+	//	return nil, err
+	//}
+	//
+	//return expr, err
+}
+
+func (x *Parser) statement() (Stmt, error) {
+	if x.match(Print) {
+		return x.printStatement()
+	}
+
+	return x.expressionStatement()
+}
+
+func (x *Parser) printStatement() (Stmt, error) {
+	value, err := x.expression()
+	if err != nil {
 		return nil, err
 	}
 
-	return expr, err
+	_, err = x.consume(Semicolon, "expect ';' after value")
+	if err != nil {
+		return nil, err
+	}
+
+	return PrintStmt{Expression: value}, nil
+}
+
+func (x *Parser) expressionStatement() (Stmt, error) {
+	expr, err := x.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = x.consume(Semicolon, "expect ';' after value")
+	if err != nil {
+		return nil, err
+	}
+
+	return ExpressionStmt{Expression: expr}, nil
 }
 
 func (x *Parser) expression() (Expr, error) {

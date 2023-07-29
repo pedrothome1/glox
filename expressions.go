@@ -1,7 +1,7 @@
 package main
 
-// Visitor
-type Visitor interface {
+// ExprVisitor for expressions
+type ExprVisitor interface {
 	VisitBinaryExpr(expr Binary) (any, error)
 	VisitGroupingExpr(expr Grouping) (any, error)
 	VisitLiteralExpr(expr Literal) (any, error)
@@ -10,7 +10,7 @@ type Visitor interface {
 
 // Expressions
 type Expr interface {
-	Accept(visitor Visitor) (any, error)
+	Accept(visitor ExprVisitor) (any, error)
 }
 
 type Binary struct {
@@ -19,7 +19,7 @@ type Binary struct {
 	Right    Expr
 }
 
-func (x Binary) Accept(visitor Visitor) (any, error) {
+func (x Binary) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitBinaryExpr(x)
 }
 
@@ -27,7 +27,7 @@ type Grouping struct {
 	Expression Expr
 }
 
-func (x Grouping) Accept(visitor Visitor) (any, error) {
+func (x Grouping) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitGroupingExpr(x)
 }
 
@@ -35,7 +35,7 @@ type Literal struct {
 	Value any
 }
 
-func (x Literal) Accept(visitor Visitor) (any, error) {
+func (x Literal) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitLiteralExpr(x)
 }
 
@@ -44,6 +44,6 @@ type Unary struct {
 	Right    Expr
 }
 
-func (x Unary) Accept(visitor Visitor) (any, error) {
+func (x Unary) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitUnaryExpr(x)
 }
