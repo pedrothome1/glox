@@ -7,24 +7,23 @@ import (
 
 type Interpreter struct{}
 
-func (x *Interpreter) Interpret(expression Expr) error {
-	value, err := x.evaluate(expression)
+func (x *Interpreter) Interpret(statements []Stmt) error {
+	var err error
 
-	if runtimeErr, ok := err.(RuntimeError); ok {
-		runtimeError(runtimeErr)
+	for _, stmt := range statements {
+		if err = x.execute(stmt); err != nil {
+			if rErr, ok := err.(RuntimeError); ok {
+				runtimeError(rErr)
+			}
 
-		return nil
+			return err
+		}
 	}
 
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(x.stringify(value))
-
-	return nil
+	return err
 }
 
+// Expression visitor methods
 func (x *Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
 	left, err := x.evaluate(expr.Left)
 	if err != nil {
@@ -130,8 +129,30 @@ func (x *Interpreter) VisitUnaryExpr(expr Unary) (any, error) {
 	return nil, nil
 }
 
+// Statement visitor methods
+func (x *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) error {
+	_, err := x.evaluate(stmt.Expression)
+
+	return err
+}
+
+func (x *Interpreter) VisitPrintStmt(stmt PrintStmt) error {
+	value, err := x.evaluate(stmt.Expression)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(x.stringify(value))
+
+	return nil
+}
+
 func (x *Interpreter) evaluate(expr Expr) (any, error) {
 	return expr.Accept(x)
+}
+
+func (x *Interpreter) execute(stmt Stmt) error {
+	return stmt.Accept(x)
 }
 
 func (x *Interpreter) stringify(value any) string {

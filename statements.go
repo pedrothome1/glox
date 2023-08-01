@@ -2,19 +2,19 @@ package main
 
 // StmtVisitor for statements
 type StmtVisitor interface {
-	VisitExpressionStmt(stmt ExpressionStmt) (any, error)
-	VisitPrintStmt(stmt PrintStmt) (any, error)
+	VisitExpressionStmt(stmt ExpressionStmt) error
+	VisitPrintStmt(stmt PrintStmt) error
 }
 
 type Stmt interface {
-	Accept(visitor StmtVisitor) (any, error)
+	Accept(visitor StmtVisitor) error
 }
 
 type ExpressionStmt struct {
 	Expression Expr
 }
 
-func (x ExpressionStmt) Accept(visitor StmtVisitor) (any, error) {
+func (x ExpressionStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitExpressionStmt(x)
 }
 
@@ -22,9 +22,6 @@ type PrintStmt struct {
 	Expression Expr
 }
 
-func (x PrintStmt) Accept(visitor StmtVisitor) (any, error) {
+func (x PrintStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitPrintStmt(x)
 }
-
-
-

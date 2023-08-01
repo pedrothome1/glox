@@ -57,7 +57,7 @@ func runPrompt() {
 
 		err := run(stdin.Text())
 		if err != nil {
-			fmt.Printf("%v", err)
+			fmt.Printf("%v\n", err)
 		}
 	}
 }
@@ -72,15 +72,15 @@ func run(source string) error {
 
 	parser := NewParser(tokens)
 
-	_, err = parser.Parse()
+	statements, err := parser.Parse()
 	if err != nil {
 		return err
 	}
 
-	//err = interpreter.Interpret(expression)
-	//if err != nil {
-	//	return err
-	//}
+	err = interpreter.Interpret(statements)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
