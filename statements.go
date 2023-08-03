@@ -4,6 +4,7 @@ package main
 type StmtVisitor interface {
 	VisitExpressionStmt(stmt ExpressionStmt) error
 	VisitPrintStmt(stmt PrintStmt) error
+	VisitVarStmt(stmt VarStmt) error
 }
 
 type Stmt interface {
@@ -24,4 +25,13 @@ type PrintStmt struct {
 
 func (x PrintStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitPrintStmt(x)
+}
+
+type VarStmt struct {
+	Name        Token
+	Initializer Expr
+}
+
+func (x VarStmt) Accept(visitor StmtVisitor) error {
+	return visitor.VisitVarStmt(x)
 }

@@ -30,7 +30,6 @@ func (x *Parser) Parse() ([]Stmt, error) {
 
 	return statements, nil
 
-
 	//expr, err := x.expression()
 	//if errors.Is(err, errParse) {
 	//	// TODO: Handle error
@@ -38,6 +37,49 @@ func (x *Parser) Parse() ([]Stmt, error) {
 	//}
 	//
 	//return expr, err
+}
+
+func (x *Parser) declaration() (stmt Stmt, err error) {
+	if x.match(Var) {
+		stmt, err = x.varDeclaration()
+	} else {
+		stmt, err = x.statement()
+	}
+
+	if errors.Is(err, errParse) {
+		x.synchronize()
+
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return
+}
+
+func (x *Parser) varDeclaration() (Stmt, error) {
+	name, err := x.consume(Identifier, "expect variable name")
+	if err != nil {
+		return nil, err
+	}
+
+	var initializer Expr
+
+	if x.match(Equal) {
+		initializer, err = x.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = x.consume(Semicolon, "expect ';' after variable declaration")
+	if err != nil {
+		return nil, err
+	}
+
+	return VarStmt{name, initializer}, nil
 }
 
 func (x *Parser) statement() (Stmt, error) {
@@ -184,6 +226,10 @@ func (x *Parser) primary() (Expr, error) {
 
 	if x.match(Number, String) {
 		return Literal{x.previous().Literal}, nil
+	}
+
+	if x.match(Identifier) {
+		return Variable{x.previous()}, nil
 	}
 
 	if x.match(LeftParen) {
