@@ -56,3 +56,13 @@ type Variable struct {
 func (x Variable) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitVariableExpr(x)
 }
+
+type Assign struct {
+	Name  Token
+	Value Expr
+}
+
+func (x *Assign) Accept(visitor ExprVisitor) (any, error) {
+	//TODO implement me
+	panic("implement me")
+}

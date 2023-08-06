@@ -5,7 +5,9 @@ import (
 	"strconv"
 )
 
-type Interpreter struct{}
+type Interpreter struct {
+	environment Environment
+}
 
 func (x *Interpreter) Interpret(statements []Stmt) error {
 	var err error
@@ -129,6 +131,10 @@ func (x *Interpreter) VisitUnaryExpr(expr Unary) (any, error) {
 	return nil, nil
 }
 
+func (x *Interpreter) VisitVariableExpr(expr Variable) (any, error) {
+	return x.environment.Get(expr.Name)
+}
+
 // Statement visitor methods
 func (x *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) error {
 	_, err := x.evaluate(stmt.Expression)
@@ -143,6 +149,22 @@ func (x *Interpreter) VisitPrintStmt(stmt PrintStmt) error {
 	}
 
 	fmt.Println(x.stringify(value))
+
+	return nil
+}
+
+func (x *Interpreter) VisitVarStmt(stmt VarStmt) error {
+	var value any
+	var err error
+
+	if stmt.Initializer != nil {
+		value, err = x.evaluate(stmt.Initializer)
+		if err != nil {
+			return err
+		}
+	}
+
+	x.environment.Define(stmt.Name.Lexeme, value)
 
 	return nil
 }
