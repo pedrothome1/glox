@@ -135,6 +135,20 @@ func (x *Interpreter) VisitVariableExpr(expr Variable) (any, error) {
 	return x.environment.Get(expr.Name)
 }
 
+func (x *Interpreter) VisitAssignExpr(expr Assign) (any, error) {
+	value, err := x.evaluate(&expr)
+	if err != nil {
+		return nil, err
+	}
+
+	err = x.environment.Assign(expr.Name, value)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
 // Statement visitor methods
 func (x *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) error {
 	_, err := x.evaluate(stmt.Expression)
@@ -165,6 +179,29 @@ func (x *Interpreter) VisitVarStmt(stmt VarStmt) error {
 	}
 
 	x.environment.Define(stmt.Name.Lexeme, value)
+
+	return nil
+}
+
+func (x *Interpreter) VisitBlockStmt(stmt BlockStmt) error {
+	return x.executeBlock(stmt.Statements, Environment{enclosing: &x.environment})
+}
+
+func (x *Interpreter) executeBlock(statements []Stmt, environment Environment) error {
+	previous := x.environment
+
+	defer func() {
+		x.environment = previous
+	}()
+
+	x.environment = environment
+
+	for _, statement := range statements {
+		err := x.execute(statement)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

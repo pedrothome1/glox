@@ -7,6 +7,7 @@ type ExprVisitor interface {
 	VisitLiteralExpr(expr Literal) (any, error)
 	VisitUnaryExpr(expr Unary) (any, error)
 	VisitVariableExpr(expr Variable) (any, error)
+	VisitAssignExpr(expr Assign) (any, error)
 }
 
 // Expressions
@@ -62,7 +63,6 @@ type Assign struct {
 	Value Expr
 }
 
-func (x *Assign) Accept(visitor ExprVisitor) (any, error) {
-	//TODO implement me
-	panic("implement me")
+func (x Assign) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitAssignExpr(x)
 }

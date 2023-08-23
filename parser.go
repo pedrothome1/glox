@@ -20,7 +20,7 @@ func (x *Parser) Parse() ([]Stmt, error) {
 	var statements []Stmt
 
 	for !x.isAtEnd() {
-		stmt, err := x.statement()
+		stmt, err := x.declaration()
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +87,36 @@ func (x *Parser) statement() (Stmt, error) {
 		return x.printStatement()
 	}
 
+	if x.match(LeftBrace) {
+		statements, err := x.block()
+		if err != nil {
+			return nil, err
+		}
+
+		return BlockStmt{Statements: statements}, nil
+	}
+
 	return x.expressionStatement()
+}
+
+func (x *Parser) block() ([]Stmt, error) {
+	var statements []Stmt
+
+	for !x.check(RightBrace) && !x.isAtEnd() {
+		declaration, err := x.declaration()
+		if err != nil {
+			return nil, err
+		}
+
+		statements = append(statements, declaration)
+	}
+
+	_, err := x.consume(RightBrace, "expect '}' after block")
+	if err != nil {
+		return nil, err
+	}
+
+	return statements, nil
 }
 
 func (x *Parser) printStatement() (Stmt, error) {
@@ -119,7 +148,34 @@ func (x *Parser) expressionStatement() (Stmt, error) {
 }
 
 func (x *Parser) expression() (Expr, error) {
-	return x.equality()
+	return x.assignment()
+}
+
+func (x *Parser) assignment() (Expr, error) {
+	expr, err := x.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	if x.match(Equal) {
+		equals := x.previous()
+
+		value, err := x.assignment()
+		if err != nil {
+			return nil, err
+		}
+
+		if v, ok := expr.(Variable); ok {
+			return &Assign{
+				Name:  v.Name,
+				Value: value,
+			}, nil
+		}
+
+		return nil, x.error(equals, "invalid assignment target")
+	}
+
+	return expr, nil
 }
 
 func (x *Parser) equality() (Expr, error) {
