@@ -6,7 +6,7 @@ import (
 )
 
 type Interpreter struct {
-	environment Environment
+	environment *Environment
 }
 
 func (x *Interpreter) Interpret(statements []Stmt) error {
@@ -136,7 +136,7 @@ func (x *Interpreter) VisitVariableExpr(expr Variable) (any, error) {
 }
 
 func (x *Interpreter) VisitAssignExpr(expr Assign) (any, error) {
-	value, err := x.evaluate(&expr)
+	value, err := x.evaluate(expr.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -147,6 +147,25 @@ func (x *Interpreter) VisitAssignExpr(expr Assign) (any, error) {
 	}
 
 	return value, nil
+}
+
+func (x *Interpreter) VisitLogicalExpr(expr Logical) (any, error) {
+	left, err := x.evaluate(expr.Left)
+	if err != nil {
+		return nil, err
+	}
+
+	if expr.Operator.Type == Or {
+		if x.isTruthy(left) {
+			return left, nil
+		}
+	} else {
+		if !x.isTruthy(left) {
+			return left, nil
+		}
+	}
+
+	return x.evaluate(expr.Right)
 }
 
 // Statement visitor methods
@@ -184,10 +203,49 @@ func (x *Interpreter) VisitVarStmt(stmt VarStmt) error {
 }
 
 func (x *Interpreter) VisitBlockStmt(stmt BlockStmt) error {
-	return x.executeBlock(stmt.Statements, Environment{enclosing: &x.environment})
+	return x.executeBlock(stmt.Statements, &Environment{enclosing: x.environment})
 }
 
-func (x *Interpreter) executeBlock(statements []Stmt, environment Environment) error {
+func (x *Interpreter) VisitIfStmt(stmt IfStmt) error {
+	condition, err := x.evaluate(stmt.Condition)
+	if err != nil {
+		return err
+	}
+
+	if x.isTruthy(condition) {
+		err = x.execute(stmt.ThenBranch)
+	} else if stmt.ElseBranch != nil {
+		err = x.execute(stmt.ElseBranch)
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (x *Interpreter) VisitWhileStmt(stmt WhileStmt) error {
+	for {
+		condition, err := x.evaluate(stmt.Condition)
+		if err != nil {
+			return err
+		}
+
+		if !x.isTruthy(condition) {
+			break
+		}
+
+		err = x.execute(stmt.Body)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// private helpers
+func (x *Interpreter) executeBlock(statements []Stmt, environment *Environment) error {
 	previous := x.environment
 
 	defer func() {

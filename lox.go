@@ -6,7 +6,12 @@ import (
 	"os"
 )
 
-var interpreter = &Interpreter{}
+var interpreter = &Interpreter{
+	environment: &Environment{
+		values:    map[string]any{},
+		enclosing: nil,
+	},
+}
 
 func main() {
 	/* AST Printer */

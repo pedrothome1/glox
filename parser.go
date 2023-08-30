@@ -83,8 +83,20 @@ func (x *Parser) varDeclaration() (Stmt, error) {
 }
 
 func (x *Parser) statement() (Stmt, error) {
+	if x.match(For) {
+		return x.forStatement()
+	}
+
+	if x.match(If) {
+		return x.ifStatement()
+	}
+
 	if x.match(Print) {
 		return x.printStatement()
+	}
+
+	if x.match(While) {
+		return x.whileStatement()
 	}
 
 	if x.match(LeftBrace) {
@@ -97,6 +109,152 @@ func (x *Parser) statement() (Stmt, error) {
 	}
 
 	return x.expressionStatement()
+}
+
+func (x *Parser) forStatement() (Stmt, error) {
+	_, err := x.consume(LeftParen, "expect '(' after 'for'")
+	if err != nil {
+		return nil, err
+	}
+
+	var initializer Stmt
+
+	if x.match(Semicolon) {
+		initializer = nil
+	} else if x.match(Var) {
+		initializer, err = x.varDeclaration()
+	} else {
+		initializer, err = x.expressionStatement()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var condition Expr
+
+	if !x.check(Semicolon) {
+		condition, err = x.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = x.consume(Semicolon, "expect ';' after loop condition")
+	if err != nil {
+		return nil, err
+	}
+
+	var increment Expr
+
+	if !x.check(RightParen) {
+		increment, err = x.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = x.consume(RightParen, "expect ')' after for clauses")
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := x.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	if increment != nil {
+		body = BlockStmt{
+			Statements: []Stmt{
+				body,
+				ExpressionStmt{Expression: increment},
+			},
+		}
+	}
+
+	if condition == nil {
+		condition = Literal{true}
+	}
+
+	body = WhileStmt{
+		Condition: condition,
+		Body:      body,
+	}
+
+	if initializer != nil {
+		body = BlockStmt{
+			Statements: []Stmt{
+				initializer,
+				body,
+			},
+		}
+	}
+
+	return body, nil
+}
+
+func (x *Parser) ifStatement() (Stmt, error) {
+	_, err := x.consume(LeftParen, "expect '(' after 'if'")
+	if err != nil {
+		return nil, err
+	}
+
+	condition, err := x.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = x.consume(RightParen, "expect ')' after if condition")
+	if err != nil {
+		return nil, err
+	}
+
+	thenBranch, err := x.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	var elseBranch Stmt
+
+	if x.match(Else) {
+		elseBranch, err = x.statement()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return IfStmt{
+		Condition:  condition,
+		ThenBranch: thenBranch,
+		ElseBranch: elseBranch,
+	}, nil
+}
+
+func (x *Parser) whileStatement() (Stmt, error) {
+	_, err := x.consume(LeftParen, "expect '(' after 'while'")
+	if err != nil {
+		return nil, err
+	}
+
+	condition, err := x.expression()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = x.consume(RightParen, "expect ')' after while condition")
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := x.statement()
+	if err != nil {
+		return nil, err
+	}
+
+	return WhileStmt{
+		Condition: condition,
+		Body:      body,
+	}, nil
 }
 
 func (x *Parser) block() ([]Stmt, error) {
@@ -152,7 +310,7 @@ func (x *Parser) expression() (Expr, error) {
 }
 
 func (x *Parser) assignment() (Expr, error) {
-	expr, err := x.equality()
+	expr, err := x.or()
 	if err != nil {
 		return nil, err
 	}
@@ -173,6 +331,54 @@ func (x *Parser) assignment() (Expr, error) {
 		}
 
 		return nil, x.error(equals, "invalid assignment target")
+	}
+
+	return expr, nil
+}
+
+func (x *Parser) or() (Expr, error) {
+	expr, err := x.and()
+	if err != nil {
+		return nil, err
+	}
+
+	for x.match(Or) {
+		operator := x.previous()
+
+		right, err := x.and()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = Logical{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
+	}
+
+	return expr, nil
+}
+
+func (x *Parser) and() (Expr, error) {
+	expr, err := x.equality()
+	if err != nil {
+		return nil, err
+	}
+
+	for x.match(And) {
+		operator := x.previous()
+
+		right, err := x.equality()
+		if err != nil {
+			return nil, err
+		}
+
+		expr = Logical{
+			Left:     expr,
+			Operator: operator,
+			Right:    right,
+		}
 	}
 
 	return expr, nil
