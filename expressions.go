@@ -9,6 +9,7 @@ type ExprVisitor interface {
 	VisitVariableExpr(expr Variable) (any, error)
 	VisitAssignExpr(expr Assign) (any, error)
 	VisitLogicalExpr(expr Logical) (any, error)
+	VisitCallExpr(expr Call) (any, error)
 }
 
 // Expressions
@@ -76,4 +77,14 @@ type Logical struct {
 
 func (x Logical) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitLogicalExpr(x)
+}
+
+type Call struct {
+	Callee    Expr
+	Paren     Token
+	Arguments []Expr
+}
+
+func (x Call) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitCallExpr(x)
 }

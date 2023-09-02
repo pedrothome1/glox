@@ -40,6 +40,10 @@ func (x *Parser) Parse() ([]Stmt, error) {
 }
 
 func (x *Parser) declaration() (stmt Stmt, err error) {
+	if x.match(Fun) {
+		return x.function("function")
+	}
+
 	if x.match(Var) {
 		stmt, err = x.varDeclaration()
 	} else {
@@ -57,6 +61,60 @@ func (x *Parser) declaration() (stmt Stmt, err error) {
 	}
 
 	return
+}
+
+func (x *Parser) function(kind string) (Stmt, error) {
+	name, err := x.consume(Identifier, "expect "+kind+" name")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = x.consume(LeftParen, "expect '(' after "+kind+" name")
+	if err != nil {
+		return nil, err
+	}
+
+	var parameters []Token
+
+	if !x.check(RightParen) {
+		for {
+			if len(parameters) > 254 {
+				return nil, x.error(x.peek(), "can't have more than 254 parameters")
+			}
+
+			param, err := x.consume(Identifier, "expect parameter name")
+			if err != nil {
+				return nil, err
+			}
+
+			parameters = append(parameters, param)
+
+			if !x.match(Comma) {
+				break
+			}
+		}
+	}
+
+	_, err = x.consume(RightParen, "expect ')' after parameters")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = x.consume(LeftBrace, "expect '{' before "+kind+" body")
+	if err != nil {
+		return nil, err
+	}
+
+	statements, err := x.block()
+	if err != nil {
+		return nil, err
+	}
+
+	return FunctionStmt{
+		Name:   name,
+		Params: parameters,
+		Body:   statements,
+	}, nil
 }
 
 func (x *Parser) varDeclaration() (Stmt, error) {
@@ -95,6 +153,10 @@ func (x *Parser) statement() (Stmt, error) {
 		return x.printStatement()
 	}
 
+	if x.match(Return) {
+		return x.returnStatement()
+	}
+
 	if x.match(While) {
 		return x.whileStatement()
 	}
@@ -109,6 +171,30 @@ func (x *Parser) statement() (Stmt, error) {
 	}
 
 	return x.expressionStatement()
+}
+
+func (x *Parser) returnStatement() (Stmt, error) {
+	keyword := x.previous()
+
+	var value Expr
+	var err error
+
+	if !x.check(Semicolon) {
+		value, err = x.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = x.consume(Semicolon, "expect ';' after return value")
+	if err != nil {
+		return nil, err
+	}
+
+	return ReturnStmt{
+		Keyword: keyword,
+		Value:   value,
+	}, nil
 }
 
 func (x *Parser) forStatement() (Stmt, error) {
@@ -470,7 +556,60 @@ func (x *Parser) unary() (Expr, error) {
 		return Unary{operator, right}, err
 	}
 
-	return x.primary()
+	return x.call()
+}
+
+func (x *Parser) call() (Expr, error) {
+	expr, err := x.primary()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		if x.match(LeftParen) {
+			expr, err = x.finishCall(expr)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			break
+		}
+	}
+
+	return expr, nil
+}
+
+func (x *Parser) finishCall(callee Expr) (Expr, error) {
+	var arguments []Expr
+
+	if !x.check(RightParen) {
+		for {
+			if len(arguments) > 254 {
+				return nil, x.error(x.peek(), "can't have more than 254 arguments")
+			}
+
+			expr, err := x.expression()
+			if err != nil {
+				return nil, err
+			}
+			arguments = append(arguments, expr)
+
+			if !x.match(Comma) {
+				break
+			}
+		}
+	}
+
+	paren, err := x.consume(RightParen, "expect ')' after arguments")
+	if err != nil {
+		return nil, err
+	}
+
+	return Call{
+		Callee:    callee,
+		Paren:     paren,
+		Arguments: arguments,
+	}, nil
 }
 
 func (x *Parser) primary() (Expr, error) {

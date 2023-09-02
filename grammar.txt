@@ -1,36 +1,27 @@
-###### Old and ambiguous ######
-
-expression -> literal
-            | unary
-            | binary
-            | grouping ;
-
-literal    -> NUMBER | STRING | "true" | "false" | "nil" ;
-grouping   -> "(" expression ")" ;
-unary      -> ( "-" | "!" ) expression ;
-binary     -> expression operator expression ;
-operator   -> "==" | "!=" | "<" | "<=" | ">" | ">="
-            | "+" | "-" | "*" | "/" ;
-
-###### New and unambiguous ######
-
 program     → declaration* EOF ;
-declaration → varDecl
+
+declaration → funDecl
+            | varDecl
             | statement ;
+funDecl     → "fun" function ;
+function    → IDENTIFIER "(" parameters? ")" block ;
+parameters  → IDENTIFIER ( "," IDENTIFIER )* ;
+varDecl     → "var" IDENTIFIER ( "=" expression )? ";" ;
+block       → "{" declaration* "}" ;
+
 statement   → exprStmt
             | forStmt
             | ifStmt
             | printStmt
+            | returnStmt
             | whileStmt
             | block;
-
 forStmt     → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 whileStmt   → "while" "(" expression ")" statement ;
 ifStmt      → "if" "(" expression ")" statement ( "else" statement )? ;
-block       → "{" declaration* "}" ;
-varDecl     → "var" IDENTIFIER ( "=" expression )? ";" ;
 exprStmt    → expression ";" ;
 printStmt   → "print" expression ";" ;
+returnStmt  → "return" expression? ";" ;
 
 expression  → assignment ;
 assignment  → IDENTIFIER "=" assignment
@@ -41,10 +32,11 @@ equality    → comparison ( ( "!=" | "==" ) comparison )* ;
 comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term        → factor ( ( "-" | "+" ) factor )* ;
 factor      → unary ( ( "/" | "*" ) unary )* ;
-unary       → ( "!" | "-" ) unary
-            | primary ;
-
+unary       → ( "!" | "-" ) unary | call ;
+call        → primary ( "(" arguments? ")" )* ;
 primary     → "true" | "false" | "nil"
             | NUMBER | STRING
             | "(" expression ")"
             | IDENTIFIER
+
+arguments   → expression ( "," expression )* ;

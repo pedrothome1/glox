@@ -8,6 +8,8 @@ type StmtVisitor interface {
 	VisitBlockStmt(stmt BlockStmt) error
 	VisitIfStmt(stmt IfStmt) error
 	VisitWhileStmt(stmt WhileStmt) error
+	VisitFunctionStmt(stmt FunctionStmt) error
+	VisitReturnStmt(stmt ReturnStmt) error
 }
 
 type Stmt interface {
@@ -64,4 +66,23 @@ type WhileStmt struct {
 
 func (x WhileStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitWhileStmt(x)
+}
+
+type FunctionStmt struct {
+	Name   Token
+	Params []Token
+	Body   []Stmt
+}
+
+func (x FunctionStmt) Accept(visitor StmtVisitor) error {
+	return visitor.VisitFunctionStmt(x)
+}
+
+type ReturnStmt struct {
+	Keyword Token
+	Value   Expr
+}
+
+func (x ReturnStmt) Accept(visitor StmtVisitor) error {
+	return visitor.VisitReturnStmt(x)
 }

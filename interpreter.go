@@ -6,7 +6,21 @@ import (
 )
 
 type Interpreter struct {
+	globals     *Environment
 	environment *Environment
+}
+
+func (x *Interpreter) Init() *Interpreter {
+	x.globals = &Environment{
+		values: map[string]any{},
+	}
+
+	// native functions
+	x.globals.Define("clock", &funClock{})
+
+	x.environment = x.globals
+
+	return x
 }
 
 func (x *Interpreter) Interpret(statements []Stmt) error {
@@ -168,6 +182,33 @@ func (x *Interpreter) VisitLogicalExpr(expr Logical) (any, error) {
 	return x.evaluate(expr.Right)
 }
 
+func (x *Interpreter) VisitCallExpr(expr Call) (any, error) {
+	callee, err := x.evaluate(expr.Callee)
+	if err != nil {
+		return nil, err
+	}
+
+	var arguments []any
+	for _, arg := range expr.Arguments {
+		argument, err := x.evaluate(arg)
+		if err != nil {
+			return nil, err
+		}
+
+		arguments = append(arguments, argument)
+	}
+
+	fn, ok := callee.(Callable)
+	if !ok {
+		return nil, RuntimeError{
+			Message: "can only call functions and classes",
+			Token:   expr.Paren,
+		}
+	}
+
+	return fn.Call(x, arguments)
+}
+
 // Statement visitor methods
 func (x *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) error {
 	_, err := x.evaluate(stmt.Expression)
@@ -242,6 +283,28 @@ func (x *Interpreter) VisitWhileStmt(stmt WhileStmt) error {
 	}
 
 	return nil
+}
+
+func (x *Interpreter) VisitFunctionStmt(stmt FunctionStmt) error {
+	fn := &function{stmt, x.environment}
+
+	x.environment.Define(stmt.Name.Lexeme, fn)
+
+	return nil
+}
+
+func (x *Interpreter) VisitReturnStmt(stmt ReturnStmt) error {
+	var value any
+	var err error
+
+	if stmt.Value != nil {
+		value, err = x.evaluate(stmt.Value)
+		if err != nil {
+			return err
+		}
+	}
+
+	panic(functionReturn{value})
 }
 
 // private helpers
