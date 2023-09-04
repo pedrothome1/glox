@@ -40,7 +40,7 @@ func (x *Interpreter) Interpret(statements []Stmt) error {
 }
 
 // Expression visitor methods
-func (x *Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
+func (x *Interpreter) VisitBinaryExpr(expr *Binary) (any, error) {
 	left, err := x.evaluate(expr.Left)
 	if err != nil {
 		return nil, err
@@ -117,15 +117,15 @@ func (x *Interpreter) VisitBinaryExpr(expr Binary) (any, error) {
 	return nil, nil
 }
 
-func (x *Interpreter) VisitGroupingExpr(expr Grouping) (any, error) {
+func (x *Interpreter) VisitGroupingExpr(expr *Grouping) (any, error) {
 	return x.evaluate(expr.Expression)
 }
 
-func (x *Interpreter) VisitLiteralExpr(expr Literal) (any, error) {
+func (x *Interpreter) VisitLiteralExpr(expr *Literal) (any, error) {
 	return expr.Value, nil
 }
 
-func (x *Interpreter) VisitUnaryExpr(expr Unary) (any, error) {
+func (x *Interpreter) VisitUnaryExpr(expr *Unary) (any, error) {
 	right, err := x.evaluate(expr.Right)
 	if err != nil {
 		return nil, err
@@ -145,11 +145,11 @@ func (x *Interpreter) VisitUnaryExpr(expr Unary) (any, error) {
 	return nil, nil
 }
 
-func (x *Interpreter) VisitVariableExpr(expr Variable) (any, error) {
+func (x *Interpreter) VisitVariableExpr(expr *Variable) (any, error) {
 	return x.environment.Get(expr.Name)
 }
 
-func (x *Interpreter) VisitAssignExpr(expr Assign) (any, error) {
+func (x *Interpreter) VisitAssignExpr(expr *Assign) (any, error) {
 	value, err := x.evaluate(expr.Value)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ func (x *Interpreter) VisitAssignExpr(expr Assign) (any, error) {
 	return value, nil
 }
 
-func (x *Interpreter) VisitLogicalExpr(expr Logical) (any, error) {
+func (x *Interpreter) VisitLogicalExpr(expr *Logical) (any, error) {
 	left, err := x.evaluate(expr.Left)
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func (x *Interpreter) VisitLogicalExpr(expr Logical) (any, error) {
 	return x.evaluate(expr.Right)
 }
 
-func (x *Interpreter) VisitCallExpr(expr Call) (any, error) {
+func (x *Interpreter) VisitCallExpr(expr *Call) (any, error) {
 	callee, err := x.evaluate(expr.Callee)
 	if err != nil {
 		return nil, err
@@ -210,13 +210,13 @@ func (x *Interpreter) VisitCallExpr(expr Call) (any, error) {
 }
 
 // Statement visitor methods
-func (x *Interpreter) VisitExpressionStmt(stmt ExpressionStmt) error {
+func (x *Interpreter) VisitExpressionStmt(stmt *ExpressionStmt) error {
 	_, err := x.evaluate(stmt.Expression)
 
 	return err
 }
 
-func (x *Interpreter) VisitPrintStmt(stmt PrintStmt) error {
+func (x *Interpreter) VisitPrintStmt(stmt *PrintStmt) error {
 	value, err := x.evaluate(stmt.Expression)
 	if err != nil {
 		return err
@@ -227,7 +227,7 @@ func (x *Interpreter) VisitPrintStmt(stmt PrintStmt) error {
 	return nil
 }
 
-func (x *Interpreter) VisitVarStmt(stmt VarStmt) error {
+func (x *Interpreter) VisitVarStmt(stmt *VarStmt) error {
 	var value any
 	var err error
 
@@ -243,11 +243,11 @@ func (x *Interpreter) VisitVarStmt(stmt VarStmt) error {
 	return nil
 }
 
-func (x *Interpreter) VisitBlockStmt(stmt BlockStmt) error {
+func (x *Interpreter) VisitBlockStmt(stmt *BlockStmt) error {
 	return x.executeBlock(stmt.Statements, &Environment{enclosing: x.environment})
 }
 
-func (x *Interpreter) VisitIfStmt(stmt IfStmt) error {
+func (x *Interpreter) VisitIfStmt(stmt *IfStmt) error {
 	condition, err := x.evaluate(stmt.Condition)
 	if err != nil {
 		return err
@@ -265,7 +265,7 @@ func (x *Interpreter) VisitIfStmt(stmt IfStmt) error {
 	return nil
 }
 
-func (x *Interpreter) VisitWhileStmt(stmt WhileStmt) error {
+func (x *Interpreter) VisitWhileStmt(stmt *WhileStmt) error {
 	for {
 		condition, err := x.evaluate(stmt.Condition)
 		if err != nil {
@@ -285,7 +285,7 @@ func (x *Interpreter) VisitWhileStmt(stmt WhileStmt) error {
 	return nil
 }
 
-func (x *Interpreter) VisitFunctionStmt(stmt FunctionStmt) error {
+func (x *Interpreter) VisitFunctionStmt(stmt *FunctionStmt) error {
 	fn := &function{stmt, x.environment}
 
 	x.environment.Define(stmt.Name.Lexeme, fn)
@@ -293,7 +293,7 @@ func (x *Interpreter) VisitFunctionStmt(stmt FunctionStmt) error {
 	return nil
 }
 
-func (x *Interpreter) VisitReturnStmt(stmt ReturnStmt) error {
+func (x *Interpreter) VisitReturnStmt(stmt *ReturnStmt) error {
 	var value any
 	var err error
 

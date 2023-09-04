@@ -6,7 +6,7 @@ type resolver struct {
 }
 
 // region statements
-func (r *resolver) VisitExpressionStmt(stmt ExpressionStmt) error {
+func (r *resolver) VisitExpressionStmt(stmt *ExpressionStmt) error {
 	err := r.resolveExpr(stmt.Expression)
 	if err != nil {
 		return err
@@ -15,7 +15,7 @@ func (r *resolver) VisitExpressionStmt(stmt ExpressionStmt) error {
 	return nil
 }
 
-func (r *resolver) VisitPrintStmt(stmt PrintStmt) error {
+func (r *resolver) VisitPrintStmt(stmt *PrintStmt) error {
 	err := r.resolveExpr(stmt.Expression)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func (r *resolver) VisitPrintStmt(stmt PrintStmt) error {
 	return nil
 }
 
-func (r *resolver) VisitVarStmt(stmt VarStmt) error {
+func (r *resolver) VisitVarStmt(stmt *VarStmt) error {
 	r.declare(stmt.Name)
 
 	if stmt.Initializer != nil {
@@ -39,7 +39,7 @@ func (r *resolver) VisitVarStmt(stmt VarStmt) error {
 	return nil
 }
 
-func (r *resolver) VisitBlockStmt(stmt BlockStmt) error {
+func (r *resolver) VisitBlockStmt(stmt *BlockStmt) error {
 	r.beginScope()
 
 	err := r.resolveStmts(stmt.Statements)
@@ -52,7 +52,7 @@ func (r *resolver) VisitBlockStmt(stmt BlockStmt) error {
 	return nil
 }
 
-func (r *resolver) VisitIfStmt(stmt IfStmt) error {
+func (r *resolver) VisitIfStmt(stmt *IfStmt) error {
 	err := r.resolveExpr(stmt.Condition)
 	if err != nil {
 		return err
@@ -73,7 +73,7 @@ func (r *resolver) VisitIfStmt(stmt IfStmt) error {
 	return nil
 }
 
-func (r *resolver) VisitWhileStmt(stmt WhileStmt) error {
+func (r *resolver) VisitWhileStmt(stmt *WhileStmt) error {
 	err := r.resolveExpr(stmt.Condition)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (r *resolver) VisitWhileStmt(stmt WhileStmt) error {
 	return nil
 }
 
-func (r *resolver) VisitFunctionStmt(stmt FunctionStmt) error {
+func (r *resolver) VisitFunctionStmt(stmt *FunctionStmt) error {
 	r.declare(stmt.Name)
 	r.define(stmt.Name)
 
@@ -99,7 +99,7 @@ func (r *resolver) VisitFunctionStmt(stmt FunctionStmt) error {
 	return nil
 }
 
-func (r *resolver) VisitReturnStmt(stmt ReturnStmt) error {
+func (r *resolver) VisitReturnStmt(stmt *ReturnStmt) error {
 	if stmt.Value != nil {
 		err := r.resolveExpr(stmt.Value)
 		if err != nil {
@@ -113,7 +113,7 @@ func (r *resolver) VisitReturnStmt(stmt ReturnStmt) error {
 // endregion
 
 // region expressions
-func (r *resolver) VisitBinaryExpr(expr Binary) (any, error) {
+func (r *resolver) VisitBinaryExpr(expr *Binary) (any, error) {
 	err := r.resolveExpr(expr.Left)
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (r *resolver) VisitBinaryExpr(expr Binary) (any, error) {
 	return nil, nil
 }
 
-func (r *resolver) VisitGroupingExpr(expr Grouping) (any, error) {
+func (r *resolver) VisitGroupingExpr(expr *Grouping) (any, error) {
 	err := r.resolveExpr(expr.Expression)
 	if err != nil {
 		return nil, err
@@ -136,11 +136,11 @@ func (r *resolver) VisitGroupingExpr(expr Grouping) (any, error) {
 	return nil, nil
 }
 
-func (r *resolver) VisitLiteralExpr(expr Literal) (any, error) {
+func (r *resolver) VisitLiteralExpr(expr *Literal) (any, error) {
 	return nil, nil
 }
 
-func (r *resolver) VisitUnaryExpr(expr Unary) (any, error) {
+func (r *resolver) VisitUnaryExpr(expr *Unary) (any, error) {
 	err := r.resolveExpr(expr.Right)
 	if err != nil {
 		return nil, err
@@ -149,7 +149,7 @@ func (r *resolver) VisitUnaryExpr(expr Unary) (any, error) {
 	return nil, nil
 }
 
-func (r *resolver) VisitVariableExpr(expr Variable) (any, error) {
+func (r *resolver) VisitVariableExpr(expr *Variable) (any, error) {
 	if len(r.scopes) > 0 && r.scopes.Peek()[expr.Name.Lexeme] == false {
 		// TODO: understand better and refactor
 		reportParserError(expr.Name, "can't read local variable in its own initializer")
@@ -159,7 +159,7 @@ func (r *resolver) VisitVariableExpr(expr Variable) (any, error) {
 	return nil, r.resolveLocal(expr, expr.Name)
 }
 
-func (r *resolver) VisitAssignExpr(expr Assign) (any, error) {
+func (r *resolver) VisitAssignExpr(expr *Assign) (any, error) {
 	err := r.resolveExpr(expr.Value)
 	if err != nil {
 		return nil, err
@@ -173,7 +173,7 @@ func (r *resolver) VisitAssignExpr(expr Assign) (any, error) {
 	return nil, nil
 }
 
-func (r *resolver) VisitLogicalExpr(expr Logical) (any, error) {
+func (r *resolver) VisitLogicalExpr(expr *Logical) (any, error) {
 	err := r.resolveExpr(expr.Left)
 	if err != nil {
 		return nil, err
@@ -187,7 +187,7 @@ func (r *resolver) VisitLogicalExpr(expr Logical) (any, error) {
 	return nil, nil
 }
 
-func (r *resolver) VisitCallExpr(expr Call) (any, error) {
+func (r *resolver) VisitCallExpr(expr *Call) (any, error) {
 	err := r.resolveExpr(expr.Callee)
 	if err != nil {
 		return nil, err
@@ -264,7 +264,7 @@ func (r *resolver) define(name Token) {
 	scope[name.Lexeme] = true
 }
 
-func (r *resolver) resolveFunction(fn FunctionStmt) error {
+func (r *resolver) resolveFunction(fn *FunctionStmt) error {
 	r.beginScope()
 
 	for _, param := range fn.Params {

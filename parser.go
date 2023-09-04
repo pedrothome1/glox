@@ -110,7 +110,7 @@ func (x *Parser) function(kind string) (Stmt, error) {
 		return nil, err
 	}
 
-	return FunctionStmt{
+	return &FunctionStmt{
 		Name:   name,
 		Params: parameters,
 		Body:   statements,
@@ -137,7 +137,7 @@ func (x *Parser) varDeclaration() (Stmt, error) {
 		return nil, err
 	}
 
-	return VarStmt{name, initializer}, nil
+	return &VarStmt{name, initializer}, nil
 }
 
 func (x *Parser) statement() (Stmt, error) {
@@ -167,7 +167,7 @@ func (x *Parser) statement() (Stmt, error) {
 			return nil, err
 		}
 
-		return BlockStmt{Statements: statements}, nil
+		return &BlockStmt{Statements: statements}, nil
 	}
 
 	return x.expressionStatement()
@@ -191,7 +191,7 @@ func (x *Parser) returnStatement() (Stmt, error) {
 		return nil, err
 	}
 
-	return ReturnStmt{
+	return &ReturnStmt{
 		Keyword: keyword,
 		Value:   value,
 	}, nil
@@ -250,25 +250,25 @@ func (x *Parser) forStatement() (Stmt, error) {
 	}
 
 	if increment != nil {
-		body = BlockStmt{
+		body = &BlockStmt{
 			Statements: []Stmt{
 				body,
-				ExpressionStmt{Expression: increment},
+				&ExpressionStmt{Expression: increment},
 			},
 		}
 	}
 
 	if condition == nil {
-		condition = Literal{true}
+		condition = &Literal{true}
 	}
 
-	body = WhileStmt{
+	body = &WhileStmt{
 		Condition: condition,
 		Body:      body,
 	}
 
 	if initializer != nil {
-		body = BlockStmt{
+		body = &BlockStmt{
 			Statements: []Stmt{
 				initializer,
 				body,
@@ -309,7 +309,7 @@ func (x *Parser) ifStatement() (Stmt, error) {
 		}
 	}
 
-	return IfStmt{
+	return &IfStmt{
 		Condition:  condition,
 		ThenBranch: thenBranch,
 		ElseBranch: elseBranch,
@@ -337,7 +337,7 @@ func (x *Parser) whileStatement() (Stmt, error) {
 		return nil, err
 	}
 
-	return WhileStmt{
+	return &WhileStmt{
 		Condition: condition,
 		Body:      body,
 	}, nil
@@ -374,7 +374,7 @@ func (x *Parser) printStatement() (Stmt, error) {
 		return nil, err
 	}
 
-	return PrintStmt{Expression: value}, nil
+	return &PrintStmt{Expression: value}, nil
 }
 
 func (x *Parser) expressionStatement() (Stmt, error) {
@@ -388,7 +388,7 @@ func (x *Parser) expressionStatement() (Stmt, error) {
 		return nil, err
 	}
 
-	return ExpressionStmt{Expression: expr}, nil
+	return &ExpressionStmt{Expression: expr}, nil
 }
 
 func (x *Parser) expression() (Expr, error) {
@@ -409,7 +409,7 @@ func (x *Parser) assignment() (Expr, error) {
 			return nil, err
 		}
 
-		if v, ok := expr.(Variable); ok {
+		if v, ok := expr.(*Variable); ok {
 			return &Assign{
 				Name:  v.Name,
 				Value: value,
@@ -436,7 +436,7 @@ func (x *Parser) or() (Expr, error) {
 			return nil, err
 		}
 
-		expr = Logical{
+		expr = &Logical{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -460,7 +460,7 @@ func (x *Parser) and() (Expr, error) {
 			return nil, err
 		}
 
-		expr = Logical{
+		expr = &Logical{
 			Left:     expr,
 			Operator: operator,
 			Right:    right,
@@ -483,7 +483,7 @@ func (x *Parser) equality() (Expr, error) {
 			return nil, err
 		}
 
-		expr = Binary{expr, operator, right}
+		expr = &Binary{expr, operator, right}
 	}
 
 	return expr, nil
@@ -502,7 +502,7 @@ func (x *Parser) comparison() (Expr, error) {
 			return nil, err
 		}
 
-		expr = Binary{expr, operator, right}
+		expr = &Binary{expr, operator, right}
 	}
 
 	return expr, nil
@@ -522,7 +522,7 @@ func (x *Parser) term() (Expr, error) {
 			return nil, err
 		}
 
-		expr = Binary{expr, operator, right}
+		expr = &Binary{expr, operator, right}
 	}
 
 	return expr, nil
@@ -542,7 +542,7 @@ func (x *Parser) factor() (Expr, error) {
 			return nil, err
 		}
 
-		expr = Binary{expr, operator, right}
+		expr = &Binary{expr, operator, right}
 	}
 
 	return expr, nil
@@ -553,7 +553,7 @@ func (x *Parser) unary() (Expr, error) {
 		operator := x.previous()
 		right, err := x.unary()
 
-		return Unary{operator, right}, err
+		return &Unary{operator, right}, err
 	}
 
 	return x.call()
@@ -605,7 +605,7 @@ func (x *Parser) finishCall(callee Expr) (Expr, error) {
 		return nil, err
 	}
 
-	return Call{
+	return &Call{
 		Callee:    callee,
 		Paren:     paren,
 		Arguments: arguments,
@@ -614,23 +614,23 @@ func (x *Parser) finishCall(callee Expr) (Expr, error) {
 
 func (x *Parser) primary() (Expr, error) {
 	if x.match(False) {
-		return Literal{false}, nil
+		return &Literal{false}, nil
 	}
 
 	if x.match(True) {
-		return Literal{true}, nil
+		return &Literal{true}, nil
 	}
 
 	if x.match(Nil) {
-		return Literal{Nil}, nil
+		return &Literal{Nil}, nil
 	}
 
 	if x.match(Number, String) {
-		return Literal{x.previous().Literal}, nil
+		return &Literal{x.previous().Literal}, nil
 	}
 
 	if x.match(Identifier) {
-		return Variable{x.previous()}, nil
+		return &Variable{x.previous()}, nil
 	}
 
 	if x.match(LeftParen) {
@@ -644,7 +644,7 @@ func (x *Parser) primary() (Expr, error) {
 			return nil, err
 		}
 
-		return Grouping{expr}, nil
+		return &Grouping{expr}, nil
 	}
 
 	return nil, x.error(x.peek(), "expect expression")

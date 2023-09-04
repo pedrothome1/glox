@@ -7,7 +7,7 @@ type Callable interface {
 }
 
 type function struct {
-	declaration FunctionStmt
+	declaration *FunctionStmt
 	closure     *Environment
 }
 

@@ -2,7 +2,7 @@ package main
 
 //type astPrinter struct{}
 //
-//func (x astPrinter) Print(expr Expr) any {
+//func (x astPrinter) Print(expr *Expr) any {
 //	result, _ := expr.Accept(&x)
 //
 //	fmt.Println(result.(string))
@@ -10,15 +10,15 @@ package main
 //	return result
 //}
 //
-//func (x astPrinter) VisitBinaryExpr(expr Binary) (any, error) {
+//func (x astPrinter) VisitBinaryExpr(expr *Binary) (any, error) {
 //	return x.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right), nil
 //}
 //
-//func (x astPrinter) VisitGroupingExpr(expr Grouping) (any, error) {
+//func (x astPrinter) VisitGroupingExpr(expr *Grouping) (any, error) {
 //	return x.parenthesize("group", expr.Expression), nil
 //}
 //
-//func (x astPrinter) VisitLiteralExpr(expr Literal) (any, error) {
+//func (x astPrinter) VisitLiteralExpr(expr *Literal) (any, error) {
 //	if expr.Value == nil {
 //		return "nil", nil
 //	}
@@ -26,7 +26,7 @@ package main
 //	return fmt.Sprintf("%v", expr.Value), nil
 //}
 //
-//func (x astPrinter) VisitUnaryExpr(expr Unary) (any, error) {
+//func (x astPrinter) VisitUnaryExpr(expr *Unary) (any, error) {
 //	return x.parenthesize(expr.Operator.Lexeme, expr.Right), nil
 //}
 //

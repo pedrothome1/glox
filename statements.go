@@ -2,14 +2,14 @@ package main
 
 // StmtVisitor for statements
 type StmtVisitor interface {
-	VisitExpressionStmt(stmt ExpressionStmt) error
-	VisitPrintStmt(stmt PrintStmt) error
-	VisitVarStmt(stmt VarStmt) error
-	VisitBlockStmt(stmt BlockStmt) error
-	VisitIfStmt(stmt IfStmt) error
-	VisitWhileStmt(stmt WhileStmt) error
-	VisitFunctionStmt(stmt FunctionStmt) error
-	VisitReturnStmt(stmt ReturnStmt) error
+	VisitExpressionStmt(stmt *ExpressionStmt) error
+	VisitPrintStmt(stmt *PrintStmt) error
+	VisitVarStmt(stmt *VarStmt) error
+	VisitBlockStmt(stmt *BlockStmt) error
+	VisitIfStmt(stmt *IfStmt) error
+	VisitWhileStmt(stmt *WhileStmt) error
+	VisitFunctionStmt(stmt *FunctionStmt) error
+	VisitReturnStmt(stmt *ReturnStmt) error
 }
 
 type Stmt interface {
@@ -20,7 +20,7 @@ type ExpressionStmt struct {
 	Expression Expr
 }
 
-func (x ExpressionStmt) Accept(visitor StmtVisitor) error {
+func (x *ExpressionStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitExpressionStmt(x)
 }
 
@@ -28,7 +28,7 @@ type PrintStmt struct {
 	Expression Expr
 }
 
-func (x PrintStmt) Accept(visitor StmtVisitor) error {
+func (x *PrintStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitPrintStmt(x)
 }
 
@@ -37,7 +37,7 @@ type VarStmt struct {
 	Initializer Expr
 }
 
-func (x VarStmt) Accept(visitor StmtVisitor) error {
+func (x *VarStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitVarStmt(x)
 }
 
@@ -45,7 +45,7 @@ type BlockStmt struct {
 	Statements []Stmt
 }
 
-func (x BlockStmt) Accept(visitor StmtVisitor) error {
+func (x *BlockStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitBlockStmt(x)
 }
 
@@ -55,7 +55,7 @@ type IfStmt struct {
 	ElseBranch Stmt
 }
 
-func (x IfStmt) Accept(visitor StmtVisitor) error {
+func (x *IfStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitIfStmt(x)
 }
 
@@ -64,7 +64,7 @@ type WhileStmt struct {
 	Body      Stmt
 }
 
-func (x WhileStmt) Accept(visitor StmtVisitor) error {
+func (x *WhileStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitWhileStmt(x)
 }
 
@@ -74,7 +74,7 @@ type FunctionStmt struct {
 	Body   []Stmt
 }
 
-func (x FunctionStmt) Accept(visitor StmtVisitor) error {
+func (x *FunctionStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitFunctionStmt(x)
 }
 
@@ -83,6 +83,6 @@ type ReturnStmt struct {
 	Value   Expr
 }
 
-func (x ReturnStmt) Accept(visitor StmtVisitor) error {
+func (x *ReturnStmt) Accept(visitor StmtVisitor) error {
 	return visitor.VisitReturnStmt(x)
 }
