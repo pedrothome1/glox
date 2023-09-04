@@ -229,10 +229,7 @@ func (r *resolver) resolveExpr(expression Expr) error {
 func (r *resolver) resolveLocal(expression Expr, name Token) error {
 	for i := len(r.scopes) - 1; i >= 0; i-- {
 		if _, ok := r.scopes[i][name.Lexeme]; ok {
-			err := r.interpreter.Resolve(expression, len(r.scopes)-1-i)
-			if err != nil {
-				return err
-			}
+			r.interpreter.Resolve(expression, len(r.scopes)-1-i)
 		}
 	}
 	return nil

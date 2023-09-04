@@ -8,6 +8,7 @@ import (
 type Interpreter struct {
 	globals     *Environment
 	environment *Environment
+	locals      map[Expr]int
 }
 
 func (x *Interpreter) Init() *Interpreter {
@@ -37,6 +38,10 @@ func (x *Interpreter) Interpret(statements []Stmt) error {
 	}
 
 	return err
+}
+
+func (x *Interpreter) Resolve(expr Expr, depth int) {
+	x.locals[expr] = depth
 }
 
 // Expression visitor methods
