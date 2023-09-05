@@ -17,6 +17,12 @@ func (x *Environment) Get(name Token) (any, error) {
 	return nil, RuntimeError{"undefined variable '" + name.Lexeme + "'", name}
 }
 
+func (x *Environment) GetAt(distance int, name string) (any, bool) {
+	value, ok := x.Ancestor(distance).values[name]
+
+	return value, ok
+}
+
 func (x *Environment) Define(name string, value any) {
 	x.ensureValuesInitialized()
 
@@ -37,6 +43,19 @@ func (x *Environment) Assign(name Token, value any) error {
 	}
 
 	return RuntimeError{"undefined variable '" + name.Lexeme + "'", name}
+}
+
+func (x *Environment) AssignAt(distance int, name Token, value any) {
+	x.Ancestor(distance).values[name.Lexeme] = value
+}
+
+func (x *Environment) Ancestor(distance int) *Environment {
+	environment := x
+	for i := 0; i < distance; i++ {
+		environment = environment.enclosing
+	}
+
+	return environment
 }
 
 func (x *Environment) ensureValuesInitialized() {

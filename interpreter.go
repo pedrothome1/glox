@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -20,6 +21,7 @@ func (x *Interpreter) Init() *Interpreter {
 	x.globals.Define("clock", &funClock{})
 
 	x.environment = x.globals
+	x.locals = make(map[Expr]int)
 
 	return x
 }
@@ -29,7 +31,8 @@ func (x *Interpreter) Interpret(statements []Stmt) error {
 
 	for _, stmt := range statements {
 		if err = x.execute(stmt); err != nil {
-			if rErr, ok := err.(RuntimeError); ok {
+			var rErr RuntimeError
+			if errors.As(err, &rErr) {
 				runtimeError(rErr)
 			}
 
@@ -151,7 +154,7 @@ func (x *Interpreter) VisitUnaryExpr(expr *Unary) (any, error) {
 }
 
 func (x *Interpreter) VisitVariableExpr(expr *Variable) (any, error) {
-	return x.environment.Get(expr.Name)
+	return x.lookupVariable(expr.Name, expr)
 }
 
 func (x *Interpreter) VisitAssignExpr(expr *Assign) (any, error) {
@@ -160,9 +163,13 @@ func (x *Interpreter) VisitAssignExpr(expr *Assign) (any, error) {
 		return nil, err
 	}
 
-	err = x.environment.Assign(expr.Name, value)
-	if err != nil {
-		return nil, err
+	if distance, ok := x.locals[expr]; ok {
+		x.environment.AssignAt(distance, expr.Name, value)
+	} else {
+		err = x.globals.Assign(expr.Name, value)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return value, nil
@@ -338,6 +345,16 @@ func (x *Interpreter) evaluate(expr Expr) (any, error) {
 
 func (x *Interpreter) execute(stmt Stmt) error {
 	return stmt.Accept(x)
+}
+
+func (x *Interpreter) lookupVariable(name Token, expr Expr) (any, error) {
+	if distance, ok := x.locals[expr]; ok {
+		value, _ := x.environment.GetAt(distance, name.Lexeme)
+
+		return value, nil
+	}
+
+	return x.globals.Get(name)
 }
 
 func (x *Interpreter) stringify(value any) string {

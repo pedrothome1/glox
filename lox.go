@@ -28,7 +28,7 @@ func main() {
 	} else if len(os.Args) == 2 {
 		err := runFile(os.Args[1])
 		if err != nil {
-			// TODO: Report error
+			fmt.Println(err)
 			os.Exit(65)
 		}
 	} else {
@@ -73,6 +73,13 @@ func run(source string) error {
 	parser := NewParser(tokens)
 
 	statements, err := parser.Parse()
+	if err != nil {
+		return err
+	}
+
+	resolver := NewResolver(interpreter)
+
+	err = resolver.Resolve(statements)
 	if err != nil {
 		return err
 	}

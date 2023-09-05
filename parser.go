@@ -724,17 +724,9 @@ func (x *Parser) synchronize() {
 
 // Errors
 func (x *Parser) error(token Token, message string) error {
-	reportParserError(token, message)
+	_ = TokenError(token, message)
 
 	return errParse
-}
-
-func reportParserError(token Token, message string) {
-	if token.Type == EOF {
-		ReportError(token.Line, message, " at end")
-	} else {
-		ReportError(token.Line, message, " at '"+token.Lexeme+"'")
-	}
 }
 
 var errParse = errors.New("parse error")

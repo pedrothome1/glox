@@ -47,7 +47,11 @@ func (x *scanner) ScanTokens() ([]Token, error) {
 	for !x.isAtEnd() {
 		// We are at the beginning of the next lexeme.
 		x.start = x.current
-		x.scanToken()
+
+		err := x.scanToken()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	x.tokens = append(x.tokens, Token{EOF, "", nil, x.line})
@@ -55,7 +59,9 @@ func (x *scanner) ScanTokens() ([]Token, error) {
 	return x.tokens, nil
 }
 
-func (x *scanner) scanToken() {
+func (x *scanner) scanToken() error {
+	var err error
+
 	c := x.advance()
 
 	switch c {
@@ -118,16 +124,18 @@ func (x *scanner) scanToken() {
 	case '\n':
 		x.line++
 	case '"':
-		x.string()
+		err = x.string()
 	default:
 		if x.isDigit(c) {
 			x.number()
 		} else if x.isAlpha(c) {
 			x.identifier()
 		} else {
-			ReportError(x.line, "unexpected character")
+			err = LineError(x.line, "unexpected character")
 		}
 	}
+
+	return err
 }
 
 func (x *scanner) advance() uint8 {
@@ -168,7 +176,7 @@ func (x *scanner) peekNext() uint8 {
 	return x.source[x.current+1]
 }
 
-func (x *scanner) string() {
+func (x *scanner) string() error {
 	for x.peek() != '"' && !x.isAtEnd() {
 		if x.peek() == '\n' {
 			x.line++
@@ -178,7 +186,7 @@ func (x *scanner) string() {
 	}
 
 	if x.isAtEnd() {
-		ReportError(x.line, "unterminated string")
+		return LineError(x.line, "unterminated string")
 	}
 
 	x.advance()
@@ -186,6 +194,8 @@ func (x *scanner) string() {
 	value := x.source[x.start+1 : x.current-1]
 
 	x.addToken(String, value)
+
+	return nil
 }
 
 func (x *scanner) number() {
