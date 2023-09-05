@@ -1,16 +1,26 @@
 package main
 
+type classType int
+
+const (
+	classTypeNone = iota
+	classTypeClass
+)
+
 type functionType int
 
 const (
-	typeNone functionType = iota
-	typeFunction
+	funcTypeNone functionType = iota
+	funcTypeFunction
+	funcTypeMethod
+	funcTypeInitializer
 )
 
 type Resolver struct {
 	interpreter     *Interpreter
 	scopes          mapStack
 	currentFunction functionType
+	currentClass    classType
 }
 
 func NewResolver(interpreter *Interpreter) *Resolver {
@@ -117,7 +127,7 @@ func (r *Resolver) VisitFunctionStmt(stmt *FunctionStmt) error {
 
 	r.define(stmt.Name)
 
-	err = r.resolveFunction(stmt, typeFunction)
+	err = r.resolveFunction(stmt, funcTypeFunction)
 	if err != nil {
 		return err
 	}
@@ -126,16 +136,53 @@ func (r *Resolver) VisitFunctionStmt(stmt *FunctionStmt) error {
 }
 
 func (r *Resolver) VisitReturnStmt(stmt *ReturnStmt) error {
-	if r.currentFunction == typeNone {
+	if r.currentFunction == funcTypeNone {
 		return TokenError(stmt.Keyword, "can't return from top-level code")
 	}
 
 	if stmt.Value != nil {
+		if r.currentFunction == funcTypeInitializer {
+			return TokenError(stmt.Keyword, "can't return a value from an initializer")
+		}
+
 		err := r.resolveExpr(stmt.Value)
 		if err != nil {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (r *Resolver) VisitClassStmt(stmt *ClassStmt) error {
+	enclosingClass := r.currentClass
+	r.currentClass = classTypeClass
+
+	err := r.declare(stmt.name)
+	if err != nil {
+		return err
+	}
+
+	r.define(stmt.name)
+
+	r.beginScope()
+	r.scopes.Peek()["this"] = true
+
+	for _, method := range stmt.methods {
+		declaration := funcTypeMethod
+		if method.Name.Lexeme == "init" {
+			declaration = funcTypeInitializer
+		}
+
+		err = r.resolveFunction(method, declaration)
+		if err != nil {
+			return err
+		}
+	}
+
+	r.endScope()
+
+	r.currentClass = enclosingClass
 
 	return nil
 }
@@ -228,6 +275,42 @@ func (r *Resolver) VisitCallExpr(expr *Call) (any, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	return nil, nil
+}
+
+func (r *Resolver) VisitGetExpr(expr *Get) (any, error) {
+	err := r.resolveExpr(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (r *Resolver) VisitSetExpr(expr *Set) (any, error) {
+	err := r.resolveExpr(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.resolveExpr(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (r *Resolver) VisitThisExpr(expr *ThisExpr) (any, error) {
+	if r.currentClass == classTypeNone {
+		return nil, TokenError(expr.Keyword, "can't use 'this' outside of a class")
+	}
+
+	err := r.resolveLocal(expr, expr.Keyword)
+	if err != nil {
+		return nil, err
 	}
 
 	return nil, nil

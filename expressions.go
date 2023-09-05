@@ -10,6 +10,9 @@ type ExprVisitor interface {
 	VisitAssignExpr(expr *Assign) (any, error)
 	VisitLogicalExpr(expr *Logical) (any, error)
 	VisitCallExpr(expr *Call) (any, error)
+	VisitGetExpr(expr *Get) (any, error)
+	VisitSetExpr(expr *Set) (any, error)
+	VisitThisExpr(expr *ThisExpr) (any, error)
 }
 
 // Expressions
@@ -87,4 +90,31 @@ type Call struct {
 
 func (x *Call) Accept(visitor ExprVisitor) (any, error) {
 	return visitor.VisitCallExpr(x)
+}
+
+type Get struct {
+	Object Expr
+	Name   Token
+}
+
+func (x *Get) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitGetExpr(x)
+}
+
+type Set struct {
+	Object Expr
+	Name   Token
+	Value  Expr
+}
+
+func (x *Set) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitSetExpr(x)
+}
+
+type ThisExpr struct {
+	Keyword Token
+}
+
+func (x *ThisExpr) Accept(visitor ExprVisitor) (any, error) {
+	return visitor.VisitThisExpr(x)
 }

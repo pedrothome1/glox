@@ -47,7 +47,7 @@ func (x *Interpreter) Resolve(expr Expr, depth int) {
 	x.locals[expr] = depth
 }
 
-// Expression visitor methods
+// region Expression visitor methods
 func (x *Interpreter) VisitBinaryExpr(expr *Binary) (any, error) {
 	left, err := x.evaluate(expr.Left)
 	if err != nil {
@@ -221,7 +221,49 @@ func (x *Interpreter) VisitCallExpr(expr *Call) (any, error) {
 	return fn.Call(x, arguments)
 }
 
-// Statement visitor methods
+func (x *Interpreter) VisitGetExpr(expr *Get) (any, error) {
+	object, err := x.evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	if instance, ok := object.(*InstanceImpl); ok {
+		return instance.Get(expr.Name)
+	}
+
+	return nil, RuntimeError{"only instances have properties", expr.Name}
+}
+
+func (x *Interpreter) VisitSetExpr(expr *Set) (any, error) {
+	object, err := x.evaluate(expr.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	var instance *InstanceImpl
+	if v, ok := object.(*InstanceImpl); !ok {
+		return nil, RuntimeError{"only instances have fields", expr.Name}
+	} else {
+		instance = v
+	}
+
+	value, err := x.evaluate(expr.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	instance.Set(expr.Name, value)
+
+	return value, nil
+}
+
+func (x *Interpreter) VisitThisExpr(expr *ThisExpr) (any, error) {
+	return x.lookupVariable(expr.Keyword, expr)
+}
+
+// endregion
+
+// region Statement visitor methods
 func (x *Interpreter) VisitExpressionStmt(stmt *ExpressionStmt) error {
 	_, err := x.evaluate(stmt.Expression)
 
@@ -298,7 +340,7 @@ func (x *Interpreter) VisitWhileStmt(stmt *WhileStmt) error {
 }
 
 func (x *Interpreter) VisitFunctionStmt(stmt *FunctionStmt) error {
-	fn := &function{stmt, x.environment}
+	fn := &FunctionImpl{stmt, x.environment, false}
 
 	x.environment.Define(stmt.Name.Lexeme, fn)
 
@@ -316,10 +358,35 @@ func (x *Interpreter) VisitReturnStmt(stmt *ReturnStmt) error {
 		}
 	}
 
-	panic(functionReturn{value})
+	panic(FunctionReturn{value})
 }
 
-// private helpers
+func (x *Interpreter) VisitClassStmt(stmt *ClassStmt) error {
+	x.environment.Define(stmt.name.Lexeme, nil)
+
+	methods := make(map[string]*FunctionImpl)
+	for _, method := range stmt.methods {
+		function := &FunctionImpl{
+			declaration:   method,
+			closure:       x.environment,
+			isInitializer: method.Name.Lexeme == "init",
+		}
+		methods[method.Name.Lexeme] = function
+	}
+
+	klass := &ClassImpl{name: stmt.name.Lexeme, methods: methods}
+
+	err := x.environment.Assign(stmt.name, klass)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// endregion
+
+// region private helpers
 func (x *Interpreter) executeBlock(statements []Stmt, environment *Environment) error {
 	previous := x.environment
 
@@ -407,7 +474,9 @@ func (x *Interpreter) checkNumberOperands(operator Token, left any, right any) e
 	return RuntimeError{"operands must be numbers", operator}
 }
 
-// Errors
+// endregion
+
+// region Errors
 func runtimeError(err RuntimeError) {
 	fmt.Printf("%s\n[line %d]\n", err.Message, err.Token.Line)
 }
@@ -420,3 +489,5 @@ type RuntimeError struct {
 func (x RuntimeError) Error() string {
 	return x.Message
 }
+
+// endregion

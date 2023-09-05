@@ -39,12 +39,15 @@ func (x *Parser) Parse() ([]Stmt, error) {
 	//return expr, err
 }
 
-func (x *Parser) declaration() (stmt Stmt, err error) {
-	if x.match(Fun) {
-		return x.function("function")
-	}
+func (x *Parser) declaration() (Stmt, error) {
+	var stmt Stmt
+	var err error
 
-	if x.match(Var) {
+	if x.match(Class) {
+		stmt, err = x.classDeclaration()
+	} else if x.match(Fun) {
+		stmt, err = x.function("function")
+	} else if x.match(Var) {
 		stmt, err = x.varDeclaration()
 	} else {
 		stmt, err = x.statement()
@@ -53,17 +56,46 @@ func (x *Parser) declaration() (stmt Stmt, err error) {
 	if errors.Is(err, errParse) {
 		x.synchronize()
 
-		return nil, nil
+		return nil, err
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	return
+	return stmt, nil
 }
 
-func (x *Parser) function(kind string) (Stmt, error) {
+func (x *Parser) classDeclaration() (*ClassStmt, error) {
+	name, err := x.consume(Identifier, "expect class name")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = x.consume(LeftBrace, "expect '{' before class body")
+	if err != nil {
+		return nil, err
+	}
+
+	var methods []*FunctionStmt
+	var method *FunctionStmt
+	for !x.check(RightBrace) && !x.isAtEnd() {
+		method, err = x.function("method")
+		methods = append(methods, method)
+	}
+
+	_, err = x.consume(RightBrace, "expect '}' after class body")
+	if err != nil {
+		return nil, err
+	}
+
+	return &ClassStmt{
+		name:    name,
+		methods: methods,
+	}, nil
+}
+
+func (x *Parser) function(kind string) (*FunctionStmt, error) {
 	name, err := x.consume(Identifier, "expect "+kind+" name")
 	if err != nil {
 		return nil, err
@@ -414,6 +446,12 @@ func (x *Parser) assignment() (Expr, error) {
 				Name:  v.Name,
 				Value: value,
 			}, nil
+		} else if get, ok := expr.(*Get); ok {
+			return &Set{
+				Object: get.Object,
+				Name:   get.Name,
+				Value:  value,
+			}, nil
 		}
 
 		return nil, x.error(equals, "invalid assignment target")
@@ -571,6 +609,16 @@ func (x *Parser) call() (Expr, error) {
 			if err != nil {
 				return nil, err
 			}
+		} else if x.match(Dot) {
+			name, err := x.consume(Identifier, "expect property name after '.'")
+			if err != nil {
+				return nil, err
+			}
+
+			expr = &Get{
+				Object: expr,
+				Name:   name,
+			}
 		} else {
 			break
 		}
@@ -627,6 +675,10 @@ func (x *Parser) primary() (Expr, error) {
 
 	if x.match(Number, String) {
 		return &Literal{x.previous().Literal}, nil
+	}
+
+	if x.match(This) {
+		return &ThisExpr{x.previous()}, nil
 	}
 
 	if x.match(Identifier) {
