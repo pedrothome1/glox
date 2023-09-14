@@ -158,17 +158,28 @@ func (r *Resolver) VisitClassStmt(stmt *ClassStmt) error {
 	enclosingClass := r.currentClass
 	r.currentClass = classTypeClass
 
-	err := r.declare(stmt.name)
+	err := r.declare(stmt.Name)
 	if err != nil {
 		return err
 	}
 
-	r.define(stmt.name)
+	r.define(stmt.Name)
+
+	if stmt.Superclass != nil && stmt.Name.Lexeme == stmt.Superclass.Name.Lexeme {
+		return TokenError(stmt.Superclass.Name, "a class can't inherit from itself")
+	}
+
+	if stmt.Superclass != nil {
+		err = r.resolveExpr(stmt.Superclass)
+		if err != nil {
+			return err
+		}
+	}
 
 	r.beginScope()
 	r.scopes.Peek()["this"] = true
 
-	for _, method := range stmt.methods {
+	for _, method := range stmt.Methods {
 		declaration := funcTypeMethod
 		if method.Name.Lexeme == "init" {
 			declaration = funcTypeInitializer

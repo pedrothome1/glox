@@ -362,10 +362,24 @@ func (x *Interpreter) VisitReturnStmt(stmt *ReturnStmt) error {
 }
 
 func (x *Interpreter) VisitClassStmt(stmt *ClassStmt) error {
-	x.environment.Define(stmt.name.Lexeme, nil)
+	var superclassImpl *ClassImpl
+
+	if stmt.Superclass != nil {
+		superclass, err := x.evaluate(stmt.Superclass)
+		if err != nil {
+			return err
+		}
+
+		var ok bool
+		if superclassImpl, ok = superclass.(*ClassImpl); !ok {
+			return RuntimeError{"superclass must be a class", stmt.Superclass.Name}
+		}
+	}
+
+	x.environment.Define(stmt.Name.Lexeme, nil)
 
 	methods := make(map[string]*FunctionImpl)
-	for _, method := range stmt.methods {
+	for _, method := range stmt.Methods {
 		function := &FunctionImpl{
 			declaration:   method,
 			closure:       x.environment,
@@ -374,9 +388,9 @@ func (x *Interpreter) VisitClassStmt(stmt *ClassStmt) error {
 		methods[method.Name.Lexeme] = function
 	}
 
-	klass := &ClassImpl{name: stmt.name.Lexeme, methods: methods}
+	klass := &ClassImpl{name: stmt.Name.Lexeme, methods: methods, superclass: superclassImpl}
 
-	err := x.environment.Assign(stmt.name, klass)
+	err := x.environment.Assign(stmt.Name, klass)
 	if err != nil {
 		return err
 	}

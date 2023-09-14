@@ -76,8 +76,9 @@ type FunctionReturn struct {
 
 // region Class
 type ClassImpl struct {
-	name    string
-	methods map[string]*FunctionImpl
+	name       string
+	methods    map[string]*FunctionImpl
+	superclass *ClassImpl
 }
 
 func (c *ClassImpl) Arity() int {
@@ -110,6 +111,10 @@ func (c *ClassImpl) String() string {
 func (c *ClassImpl) FindMethod(name string) *FunctionImpl {
 	if method, ok := c.methods[name]; ok {
 		return method
+	}
+
+	if c.superclass != nil {
+		return c.superclass.FindMethod(name)
 	}
 
 	return nil

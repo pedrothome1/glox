@@ -89,8 +89,9 @@ func (x *ReturnStmt) Accept(visitor StmtVisitor) error {
 }
 
 type ClassStmt struct {
-	name    Token
-	methods []*FunctionStmt
+	Name       Token
+	Superclass *Variable
+	Methods    []*FunctionStmt
 }
 
 func (x *ClassStmt) Accept(visitor StmtVisitor) error {
