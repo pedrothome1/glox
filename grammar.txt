@@ -40,5 +40,6 @@ primary     → "true" | "false" | "nil"
             | NUMBER | STRING
             | "(" expression ")"
             | IDENTIFIER
+            | "super" "." IDENTIFIER ;
 
 arguments   → expression ( "," expression )* ;

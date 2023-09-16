@@ -261,6 +261,24 @@ func (x *Interpreter) VisitThisExpr(expr *ThisExpr) (any, error) {
 	return x.lookupVariable(expr.Keyword, expr)
 }
 
+func (x *Interpreter) VisitSuperExpr(expr *SuperExpr) (any, error) {
+	distance := x.locals[expr]
+
+	super, _ := x.environment.GetAt(distance, "super")
+	superclass := super.(*ClassImpl)
+
+	obj, _ := x.environment.GetAt(distance-1, "this")
+	object := obj.(*InstanceImpl)
+
+	method := superclass.FindMethod(expr.Method.Lexeme)
+
+	if method == nil {
+		return nil, RuntimeError{"undefined property '" + expr.Method.Lexeme + "'", expr.Method}
+	}
+
+	return method.Bind(object), nil
+}
+
 // endregion
 
 // region Statement visitor methods
@@ -378,6 +396,14 @@ func (x *Interpreter) VisitClassStmt(stmt *ClassStmt) error {
 
 	x.environment.Define(stmt.Name.Lexeme, nil)
 
+	if stmt.Superclass != nil {
+		x.environment = &Environment{
+			values:    make(map[string]any),
+			enclosing: x.environment,
+		}
+		x.environment.Define("super", superclassImpl)
+	}
+
 	methods := make(map[string]*FunctionImpl)
 	for _, method := range stmt.Methods {
 		function := &FunctionImpl{
@@ -389,6 +415,10 @@ func (x *Interpreter) VisitClassStmt(stmt *ClassStmt) error {
 	}
 
 	klass := &ClassImpl{name: stmt.Name.Lexeme, methods: methods, superclass: superclassImpl}
+
+	if superclassImpl != nil {
+		x.environment = x.environment.enclosing
+	}
 
 	err := x.environment.Assign(stmt.Name, klass)
 	if err != nil {

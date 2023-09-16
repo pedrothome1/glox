@@ -5,6 +5,7 @@ type classType int
 const (
 	classTypeNone = iota
 	classTypeClass
+	classTypeSubclass
 )
 
 type functionType int
@@ -170,10 +171,17 @@ func (r *Resolver) VisitClassStmt(stmt *ClassStmt) error {
 	}
 
 	if stmt.Superclass != nil {
+		r.currentClass = classTypeSubclass
+
 		err = r.resolveExpr(stmt.Superclass)
 		if err != nil {
 			return err
 		}
+	}
+
+	if stmt.Superclass != nil {
+		r.beginScope()
+		r.scopes.Peek()["super"] = true
 	}
 
 	r.beginScope()
@@ -192,6 +200,10 @@ func (r *Resolver) VisitClassStmt(stmt *ClassStmt) error {
 	}
 
 	r.endScope()
+
+	if stmt.Superclass != nil {
+		r.endScope()
+	}
 
 	r.currentClass = enclosingClass
 
@@ -325,6 +337,16 @@ func (r *Resolver) VisitThisExpr(expr *ThisExpr) (any, error) {
 	}
 
 	return nil, nil
+}
+
+func (r *Resolver) VisitSuperExpr(expr *SuperExpr) (any, error) {
+	if r.currentClass == classTypeNone {
+		return nil, TokenError(expr.Keyword, "can't use 'super' outside of a class")
+	} else if r.currentClass != classTypeSubclass {
+		return nil, TokenError(expr.Keyword, "can't use 'super' in a class with no superclass")
+	}
+
+	return nil, r.resolveLocal(expr, expr.Keyword)
 }
 
 // endregion
