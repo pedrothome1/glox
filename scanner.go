@@ -114,6 +114,17 @@ func (x *scanner) scanToken() error {
 			for x.peek() != '\n' && !x.isAtEnd() {
 				x.advance()
 			}
+		} else if x.match('*') {
+			for !x.isAtEnd() {
+				if x.peek() == '*' && x.peekNext() == '/' {
+					x.advance()
+					x.advance()
+
+					break
+				}
+
+				x.advance()
+			}
 		} else {
 			x.addToken(Slash, nil)
 		}
