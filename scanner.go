@@ -115,12 +115,23 @@ func (x *scanner) scanToken() error {
 				x.advance()
 			}
 		} else if x.match('*') {
-			for !x.isAtEnd() {
-				if x.peek() == '*' && x.peekNext() == '/' {
+			stack := []struct{}{{}}
+
+			for len(stack) > 0 && !x.isAtEnd() {
+				if x.peek() == '/' && x.peekNext() == '*' {
+					stack = append(stack, struct{}{})
 					x.advance()
 					x.advance()
 
-					break
+					continue
+				}
+
+				if x.peek() == '*' && x.peekNext() == '/' {
+					stack = stack[:len(stack)-1]
+					x.advance()
+					x.advance()
+
+					continue
 				}
 
 				x.advance()

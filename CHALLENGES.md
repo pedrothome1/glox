@@ -61,7 +61,9 @@ via reflection, and maybe other things.*
 4. Add support to Lox’s scanner for C-style `/* ... */` block comments. 
 Make sure to handle newlines in them. Consider allowing them to nest. 
 Is adding support for nesting more work than you expected? Why?
-
+*The testing code is located at `challenges/chapter4_4/`. Adding support for
+nesting brings the necessity to ensure the balance between `/*` and `*/`.
+I've used a stack for that.*
 
 
 

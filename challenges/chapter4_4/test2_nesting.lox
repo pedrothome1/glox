@@ -1,0 +1,20 @@
+/**
+    @author      Pedro Almeida
+    @date        Sep 24th, 2023 at 08:13PM GMT-3
+    @description Program to test the C-style block comment implementation
+
+    /* Nested comment I */
+    /*
+        /*Nested comment II*/
+    */
+    /**
+        /**
+            /* Nested comment III */
+        */
+    */
+*/
+
+var name = "Pedro";                  /* Person's name */
+var greeting = "Hello";              /* Greeting word */
+
+print greeting + ", " + name + "!";  /* Print greeting sentence */
